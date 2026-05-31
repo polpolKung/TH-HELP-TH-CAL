@@ -90,7 +90,7 @@ function getGovSubsidyUsedThisMonth(date) {
  */
 function calculateCopay(purchaseAmount) {
     if (isNaN(purchaseAmount) || purchaseAmount <= 0) {
-        return { govSubsidy: 0, userPay: 0, isDailyCapped: false, isMonthlyCapped: false };
+        return { govSubsidy: 0, userPay: 0, isDailyCapped: false, isMonthlyCapped: false, excessPay: 0 };
     }
 
     const currentDate = getCurrentDate();
@@ -116,11 +116,19 @@ function calculateCopay(purchaseAmount) {
     const isDailyCapped = (expectedGovSubsidy > dailyLimitRemaining) && (actualGovSubsidy === Math.round(dailyLimitRemaining * 100) / 100) && dailyLimitRemaining < expectedGovSubsidy;
     const isMonthlyCapped = (expectedGovSubsidy > monthlyLimitRemaining) && (actualGovSubsidy === Math.round(monthlyLimitRemaining * 100) / 100) && monthlyLimitRemaining < expectedGovSubsidy;
 
+    // คำนวณส่วนเกินที่ผู้ใช้ต้องรับภาระเพิ่มเนื่องจากชนเพดาน (รัฐช่วยได้น้อยลง)
+    let excessPay = 0;
+    if (isDailyCapped || isMonthlyCapped || (actualGovSubsidy === 0 && expectedGovSubsidy > 0)) {
+        excessPay = Math.max(0, expectedGovSubsidy - actualGovSubsidy);
+        excessPay = Math.round(excessPay * 100) / 100;
+    }
+
     return {
         govSubsidy: actualGovSubsidy,
         userPay: userPay,
         isDailyCapped: isDailyCapped,
-        isMonthlyCapped: isMonthlyCapped
+        isMonthlyCapped: isMonthlyCapped,
+        excessPay: excessPay
     };
 }
 
@@ -136,11 +144,11 @@ function addTransaction(amount, note = '') {
 
     if (result.govSubsidy <= 0 && amount > 0) {
         // ถ้ารัฐช่วยได้ 0 บาท เพราะสิทธิเต็มแล้ว ให้แจ้งเตือน แต่ยังยินยอมให้บันทึกได้โดยผู้ใช้จ่ายเองเต็มจำนวน
-        showToast("โควตาสิทธิคงเหลือของคุณหมดแล้ว รายการนี้คุณต้องจ่ายเองเต็มจำนวน", "warning");
+        showToast(`โควตาสิทธิคงเหลือของคุณหมดแล้ว รายการนี้คุณต้องจ่ายเองเพิ่มอีก ${formatCurrency(result.excessPay)} บ.`, "warning");
     } else if (result.isDailyCapped) {
-        showToast("ส่วนลดบางส่วนถูกจำกัดเนื่องจากชนเพดานสิทธิรายวัน (200 บ.)", "warning");
+        showToast(`ส่วนลดบางส่วนถูกจำกัดเนื่องจากชนเพดานสิทธิรายวัน (ต้องจ่ายเพิ่มเองอีก ${formatCurrency(result.excessPay)} บ.)`, "warning");
     } else if (result.isMonthlyCapped) {
-        showToast("ส่วนลดบางส่วนถูกจำกัดเนื่องจากชนเพดานสิทธิรายเดือน (1,000 บ.)", "warning");
+        showToast(`ส่วนลดบางส่วนถูกจำกัดเนื่องจากชนเพดานสิทธิรายเดือน (ต้องจ่ายเพิ่มเองอีก ${formatCurrency(result.excessPay)} บ.)`, "warning");
     } else {
         showToast("บันทึกรายการใช้จ่ายเรียบร้อยแล้ว", "success");
     }
@@ -169,28 +177,64 @@ function addTransaction(amount, note = '') {
 
 // ลบรายการธุรกรรม
 function deleteTransaction(id) {
-    if (confirm("คุณต้องการลบรายการนี้ใช่หรือไม่? สิทธิคงเหลือจะถูกคำนวณใหม่")) {
-        state.transactions = state.transactions.filter(t => t.id !== id);
-        saveTransactions();
-        updateUI();
-        showToast("ลบรายการเรียบร้อยแล้ว", "success");
-    }
+    Swal.fire({
+        title: 'ต้องการลบรายการนี้?',
+        text: 'เมื่อลบแล้ว สิทธิคงเหลือจะถูกคำนวณใหม่โดยอัตโนมัติ',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e11d48', // rose-600
+        cancelButtonColor: '#64748b', // slate-500
+        confirmButtonText: 'ใช่, ลบเลย!',
+        cancelButtonText: 'ยกเลิก',
+        background: '#ffffff',
+        customClass: {
+            popup: 'rounded-3xl shadow-xl border border-slate-100 font-prompt',
+            confirmButton: 'px-5 py-2.5 bg-rose-600 text-white rounded-xl font-semibold text-sm transition hover:bg-rose-700 focus:outline-none mr-2',
+            cancelButton: 'px-5 py-2.5 bg-slate-500 text-white rounded-xl font-semibold text-sm transition hover:bg-slate-600 focus:outline-none ml-2'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            state.transactions = state.transactions.filter(t => t.id !== id);
+            saveTransactions();
+            updateUI();
+            showToast("ลบรายการเรียบร้อยแล้ว", "success");
+        }
+    });
 }
 
 // รีเซ็ตข้อมูลทั้งหมด
 function resetAllData() {
-    if (confirm("คำเตือน: คุณต้องการลบข้อมูลประวัติการทำรายการทั้งหมดและรีเซ็ตสิทธิกลับมาเริ่มต้นใหม่ใช่หรือไม่? (การดำเนินการนี้ไม่สามารถย้อนกลับได้)")) {
-        state.transactions = [];
-        state.simulatedTime = null;
-        saveTransactions();
-        
-        // เคลียร์ input ในแผงจำลองเวลา
-        const timeInput = document.getElementById('sim-time-input');
-        if (timeInput) timeInput.value = '';
-        
-        updateUI();
-        showToast("รีเซ็ตข้อมูลทั้งหมดเรียบร้อยแล้ว", "success");
-    }
+    Swal.fire({
+        title: 'ยืนยันการล้างข้อมูลทั้งหมด?',
+        text: 'ประวัติธุรกรรมทั้งหมดจะถูกลบ และรีเซ็ตสิทธิกลับมาเริ่มต้นใหม่ (ไม่สามารถกู้คืนได้!)',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e11d48', // rose-600
+        cancelButtonColor: '#64748b', // slate-500
+        confirmButtonText: 'ใช่, รีเซ็ตเลย!',
+        cancelButtonText: 'ยกเลิก',
+        background: '#ffffff',
+        customClass: {
+            popup: 'rounded-3xl shadow-xl border border-slate-100 font-prompt',
+            confirmButton: 'px-5 py-2.5 bg-rose-600 text-white rounded-xl font-semibold text-sm transition hover:bg-rose-700 focus:outline-none mr-2',
+            cancelButton: 'px-5 py-2.5 bg-slate-500 text-white rounded-xl font-semibold text-sm transition hover:bg-slate-600 focus:outline-none ml-2'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            state.transactions = [];
+            state.simulatedTime = null;
+            saveTransactions();
+            
+            // เคลียร์ input ในแผงจำลองเวลา
+            const timeInput = document.getElementById('sim-time-input');
+            if (timeInput) timeInput.value = '';
+            
+            updateUI();
+            showToast("รีเซ็ตข้อมูลทั้งหมดเรียบร้อยแล้ว", "success");
+        }
+    });
 }
 
 // อัปเดตการแสดงผลคำนวณแบบ Realtime ขณะพิมพ์
@@ -205,17 +249,27 @@ function updateCalculationPreview() {
     document.getElementById('preview-user').innerText = formatCurrency(result.userPay);
     document.getElementById('preview-total').innerText = formatCurrency(state.currentInput);
 
+    // แสดง/ซ่อน แผงยอดส่วนเกิน
+    const excessContainer = document.getElementById('preview-excess-container');
+    const excessDisplay = document.getElementById('preview-excess');
+    if (result.excessPay > 0 && excessContainer && excessDisplay) {
+        excessDisplay.innerText = formatCurrency(result.excessPay) + " บาท";
+        excessContainer.classList.remove('hidden');
+    } else if (excessContainer) {
+        excessContainer.classList.add('hidden');
+    }
+
     // แสดงคำอธิบายแจ้งเตือนโควตาชนเพดานแบบ Realtime
     const warningText = document.getElementById('preview-warning');
     if (state.currentInput > 0) {
         if (result.govSubsidy === 0) {
-            warningText.innerHTML = `<span class="text-rose-600 font-semibold">⚠️ สิทธิการช่วยเหลือหมดแล้ว! คุณต้องจ่ายเอง 100%</span>`;
+            warningText.innerHTML = `<span class="text-rose-600 font-semibold">⚠️ สิทธิการช่วยเหลือหมดแล้ว! คุณต้องจ่ายเอง 100% (ส่วนเกินที่คุณต้องจ่ายเพิ่มเองคือ ${formatCurrency(result.excessPay)} บ.)</span>`;
             warningText.classList.remove('hidden');
         } else if (result.isDailyCapped) {
-            warningText.innerHTML = `<span class="text-amber-600 font-semibold">⚠️ ชนเพดานสิทธิรายวัน! รัฐช่วยได้เพียง ${formatCurrency(result.govSubsidy)} บ. (ส่วนที่เหลือคุณต้องจ่ายเอง)</span>`;
+            warningText.innerHTML = `<span class="text-amber-600 font-semibold">⚠️ ชนเพดานสิทธิรายวัน! รัฐช่วยได้เพียง ${formatCurrency(result.govSubsidy)} บ. (ส่วนที่คุณต้องจ่ายเพิ่มเองคือ ${formatCurrency(result.excessPay)} บ.)</span>`;
             warningText.classList.remove('hidden');
         } else if (result.isMonthlyCapped) {
-            warningText.innerHTML = `<span class="text-amber-600 font-semibold">⚠️ ชนเพดานสิทธิรายเดือน! รัฐช่วยได้เพียง ${formatCurrency(result.govSubsidy)} บ. (ส่วนที่เหลือคุณต้องจ่ายเอง)</span>`;
+            warningText.innerHTML = `<span class="text-amber-600 font-semibold">⚠️ ชนเพดานสิทธิรายเดือน! รัฐช่วยได้เพียง ${formatCurrency(result.govSubsidy)} บ. (ส่วนที่คุณต้องจ่ายเพิ่มเองคือ ${formatCurrency(result.excessPay)} บ.)</span>`;
             warningText.classList.remove('hidden');
         } else {
             warningText.innerHTML = `<span class="text-emerald-600 font-semibold">✓ คำนวณตามเกณฑ์รัฐช่วย 60% / คุณจ่าย 40%</span>`;

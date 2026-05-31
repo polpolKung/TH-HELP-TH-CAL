@@ -48,7 +48,7 @@ function getGovSubsidyUsedThisMonth(date) {
 
 function calculateCopay(purchaseAmount) {
     if (isNaN(purchaseAmount) || purchaseAmount <= 0) {
-        return { govSubsidy: 0, userPay: 0, isDailyCapped: false, isMonthlyCapped: false };
+        return { govSubsidy: 0, userPay: 0, isDailyCapped: false, isMonthlyCapped: false, excessPay: 0 };
     }
 
     const currentDate = getCurrentDate();
@@ -69,11 +69,19 @@ function calculateCopay(purchaseAmount) {
     const isDailyCapped = (expectedGovSubsidy > dailyLimitRemaining) && (actualGovSubsidy === Math.round(dailyLimitRemaining * 100) / 100) && dailyLimitRemaining < expectedGovSubsidy;
     const isMonthlyCapped = (expectedGovSubsidy > monthlyLimitRemaining) && (actualGovSubsidy === Math.round(monthlyLimitRemaining * 100) / 100) && monthlyLimitRemaining < expectedGovSubsidy;
 
+    // คำนวณส่วนเกินที่ผู้ใช้ต้องรับภาระเพิ่มเนื่องจากชนเพดาน (รัฐช่วยได้น้อยลง)
+    let excessPay = 0;
+    if (isDailyCapped || isMonthlyCapped || (actualGovSubsidy === 0 && expectedGovSubsidy > 0)) {
+        excessPay = Math.max(0, expectedGovSubsidy - actualGovSubsidy);
+        excessPay = Math.round(excessPay * 100) / 100;
+    }
+
     return {
         govSubsidy: actualGovSubsidy,
         userPay: userPay,
         isDailyCapped: isDailyCapped,
-        isMonthlyCapped: isMonthlyCapped
+        isMonthlyCapped: isMonthlyCapped,
+        excessPay: excessPay
     };
 }
 
@@ -557,6 +565,25 @@ resetState();
     assertEqual('วัน 6 → จ่ายเอง 50 บ.', r1.userPay, 50);
     assert('วัน 6 → isMonthlyCapped = true', r1.isMonthlyCapped);
     assert('วัน 6 → isDailyCapped = false (ยังเหลือวัน)', !r1.isDailyCapped);
+})();
+
+// --- TC-17: ตรวจสอบความถูกต้องของส่วนเกิน excessPay ---
+section('TC-17: ตรวจสอบความถูกต้องของส่วนเกิน excessPay');
+resetState();
+
+(() => {
+    // 1. ไม่มีชนเพดาน
+    const r1 = calculateCopay(100);
+    assertEqual('100 บ. (ไม่ชน) → excessPay = 0', r1.excessPay, 0);
+
+    // 2. ชนเพดานรายวัน (ซื้อ 500 บ., รัฐช่วยสูงสุด 200, ควรช่วย 300)
+    const r2 = calculateCopay(500);
+    assertEqual('500 บ. (ชนเพดานวัน) → excessPay = 100', r2.excessPay, 100);
+
+    // 3. สะสมจนโควตาหมด (รัฐช่วย 0, ควรช่วย 60)
+    addTransactionTest(400, 'วัน 1 ร1'); // รัฐช่วยเต็ม 200 บ.
+    const r3 = calculateCopay(100);
+    assertEqual('100 บ. (โควตาหมด) → excessPay = 60', r3.excessPay, 60);
 })();
 
 
