@@ -83,14 +83,14 @@ function getCurrentDate() {
 // ตรวจสอบว่าเป็นวันเดียวกันหรือไม่ (เทียบปี-เดือน-วัน)
 function isSameDay(d1, d2) {
     return d1.getFullYear() === d2.getFullYear() &&
-           d1.getMonth() === d2.getMonth() &&
-           d1.getDate() === d2.getDate();
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
 }
 
 // ตรวจสอบว่าเป็นเดือนเดียวกันหรือไม่ (เทียบปี-เดือน)
 function isSameMonth(d1, d2) {
     return d1.getFullYear() === d2.getFullYear() &&
-           d1.getMonth() === d2.getMonth();
+        d1.getMonth() === d2.getMonth();
 }
 
 // คำนวณยอดเงินที่รัฐช่วยไปแล้วในวันนี้
@@ -164,7 +164,7 @@ function addTransaction(amount, note = '', timestamp = null) {
     }
 
     const txTimestamp = timestamp || getCurrentDate().getTime();
-    
+
     // ตั้งค่าเวลาชั่วคราวให้สอดคล้องกับรายการนี้เพื่อคำนวณสิทธิ ณ เสี้ยวเวลานั้นก่อนบันทึก
     const tempSimTime = state.simulatedTime;
     state.simulatedTime = txTimestamp;
@@ -192,7 +192,7 @@ function addTransaction(amount, note = '', timestamp = null) {
     };
 
     state.transactions.unshift(newTransaction); // เอาไว้ด้านบนสุด
-    
+
     // คำนวณความถูกต้องของสิทธิใหม่ทั้งหมดเผื่อมีการระบุวันเวลาในอดีตหรือข้ามลำดับเวลา
     recalculateAllTransactions();
     updateUI();
@@ -208,7 +208,7 @@ function addTransaction(amount, note = '', timestamp = null) {
     setFormDateTimeDefault(); // คืนวันเวลากลับสู่เริ่มต้น
     state.currentInput = 0;
     updateCalculationPreview();
-    
+
     return true;
 }
 
@@ -244,7 +244,7 @@ function deleteTransaction(id) {
 function recalculateAllTransactions() {
     // เรียงจากเก่าไปใหม่เพื่อคำนวณสะสม
     const sorted = [...state.transactions].sort((a, b) => a.timestamp - b.timestamp);
-    
+
     const dailyGovSum = {};
     const monthlyGovSum = {};
 
@@ -263,7 +263,7 @@ function recalculateAllTransactions() {
         let actualGovSubsidy = Math.min(expectedGovSubsidy, dailyLimitRemaining, monthlyLimitRemaining);
         actualGovSubsidy = Math.max(0, actualGovSubsidy);
         actualGovSubsidy = Math.round(actualGovSubsidy * 100) / 100;
-        
+
         const userPay = Math.round((t.amount - actualGovSubsidy) * 100) / 100;
 
         t.govSubsidy = actualGovSubsidy;
@@ -318,7 +318,7 @@ function editTransaction(id) {
         didOpen: () => {
             const swalAmount = document.getElementById('swal-amount');
             if (swalAmount) {
-                swalAmount.addEventListener('input', function() {
+                swalAmount.addEventListener('input', function () {
                     let val = this.value;
                     val = val.replace(/[^0-9.]/g, '');
                     const dotIndex = val.indexOf('.');
@@ -349,7 +349,7 @@ function editTransaction(id) {
             tx.amount = result.value.amount;
             tx.note = result.value.note.trim() || 'รายการทั่วไป';
             tx.timestamp = new Date(result.value.datetime).getTime();
-            
+
             recalculateAllTransactions();
             updateUI();
             showToast("แก้ไขรายการเรียบร้อยแล้ว", "success");
@@ -385,11 +385,11 @@ function resetAllData() {
             state.transactions = [];
             state.simulatedTime = null;
             saveTransactions();
-            
+
             // เคลียร์ input ในแผงจำลองเวลา
             const timeInput = document.getElementById('sim-time-input');
             if (timeInput) timeInput.value = '';
-            
+
             updateUI();
             showToast("รีเซ็ตข้อมูลทั้งหมดเรียบร้อยแล้ว", "success");
         }
@@ -457,11 +457,11 @@ function updateCalculationPreview() {
 // อัปเดต UI ทั้งหมด
 function updateUI() {
     const currentDate = getCurrentDate();
-    
+
     // 1. อัปเดตแถบแสดงวันเวลาจำลอง (ถ้ามี)
     const timeDisplay = document.getElementById('current-time-display');
     const timeLabel = document.getElementById('time-travel-badge');
-    
+
     const formattedDate = currentDate.toLocaleDateString('th-TH', {
         year: 'numeric',
         month: 'long',
@@ -524,7 +524,7 @@ function updateUI() {
             // สร้าง Element แถวประวัติ
             const row = document.createElement('div');
             row.className = "flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition duration-150 border border-slate-100";
-            
+
             row.innerHTML = `
                 <div class="flex-1 min-w-0 pr-4">
                     <div class="flex items-center gap-2 mb-1">
@@ -570,14 +570,14 @@ function updateProgressRing(ringId, usedValue, limitValue, defaultColorClass) {
 
     const radius = circle.r.baseVal.value;
     const circumference = 2 * Math.PI * radius;
-    
+
     // กำหนดค่า strokeDasharray
     circle.style.strokeDasharray = `${circumference} ${circumference}`;
-    
+
     // คำนวณเปอร์เซ็นต์ (ไม่เกิน 100%)
     const pct = Math.min(100, (usedValue / limitValue) * 100);
     const offset = circumference - (pct / 100) * circumference;
-    
+
     circle.style.strokeDashoffset = offset;
 
     // อัปเดตสีเกจตามความหนาแน่นการใช้งาน
@@ -604,13 +604,13 @@ function setupEventListeners() {
         // กรองตัวอักษรอื่นที่ไม่ใช่ตัวเลขและจุดทศนิยม
         let val = this.value;
         val = val.replace(/[^0-9.]/g, '');
-        
+
         // อนุญาตให้มีจุดทศนิยมได้ตัวเดียวเท่านั้น
         const dotIndex = val.indexOf('.');
         if (dotIndex !== -1) {
             val = val.slice(0, dotIndex + 1) + val.slice(dotIndex + 1).replace(/\./g, '');
         }
-        
+
         this.value = val;
         updateCalculationPreview();
     });
@@ -621,11 +621,11 @@ function setupEventListeners() {
         e.preventDefault();
         const amount = parseFloat(amountInput.value);
         const note = document.getElementById('note-input').value;
-        
+
         // ดึงเวลาทำรายการจากตัวเลือก หรือใช้เวลาปัจจุบัน/เวลาท่องเที่ยว
         const txTimeInput = document.getElementById('tx-time-input');
         const timestamp = txTimeInput.value ? new Date(txTimeInput.value).getTime() : getCurrentDate().getTime();
-        
+
         addTransaction(amount, note, timestamp);
     });
 
@@ -681,19 +681,19 @@ function setupEventListeners() {
 // ฟังก์ชันคำนวณสูตรคณิตศาสตร์อย่างปลอดภัย
 function safeEvaluate(expression) {
     if (!expression) return 0;
-    
+
     // ทำความสะอาดสตริง: อนุญาตเฉพาะ ตัวเลข, +, -, *, /, ., ( และ ) เท่านั้น
     let cleanExpr = expression.replace(/\s+/g, '');
-    
+
     // ตรวจสอบโครงสร้างสมการคณิตศาสตร์ที่ถูกต้อง
     if (!/^[0-9+\-*/().]+$/.test(cleanExpr)) {
         return null;
     }
-    
+
     try {
         const evaluator = new Function(`return (${cleanExpr})`);
         const result = evaluator();
-        
+
         if (typeof result === 'number' && isFinite(result)) {
             return Math.round(result * 100) / 100;
         }
@@ -714,7 +714,7 @@ function setupHelperCalculator() {
     const backBtn = document.getElementById('backspace-calc-btn');
     const equalBtn = document.getElementById('calc-equal');
     const applyBtn = document.getElementById('apply-calc-btn');
-    
+
     const exprDisplay = document.getElementById('calc-expression');
     const numDisplay = document.getElementById('calc-display');
     const amountInput = document.getElementById('amount-input');
@@ -749,7 +749,7 @@ function setupHelperCalculator() {
     // ฟังก์ชันอัปเดตหน้าจอเครื่องคิดเลข
     function updateCalcScreen(showRealtimeEval = true) {
         exprDisplay.innerText = calcExpr.replace(/\*/g, ' × ').replace(/\//g, ' ÷ ');
-        
+
         if (calcExpr === '') {
             numDisplay.innerText = '0';
             return;
@@ -768,7 +768,7 @@ function setupHelperCalculator() {
     keys.forEach(btn => {
         btn.addEventListener('click', () => {
             const val = btn.getAttribute('data-val');
-            if (!val) return; 
+            if (!val) return;
 
             // ป้องกันการใส่ตัวดำเนินการซ้ำซ้อน
             const lastChar = calcExpr.slice(-1);
@@ -835,7 +835,7 @@ function setupHelperCalculator() {
     // ปรับปรุงการรองรับคีย์บอร์ดกายภาพเมื่อแผงเปิดอยู่
     document.addEventListener('keydown', (e) => {
         if (panel.classList.contains('hidden')) return;
-        
+
         const allowedKeys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '+', '-', '*', '/'];
         if (allowedKeys.includes(e.key)) {
             e.preventDefault();
@@ -885,7 +885,7 @@ function showToast(message, type = 'success') {
 
     // สร้าง Toast Element
     const toast = document.createElement('div');
-    
+
     // ตั้งค่า Class สีตามประเภทแจ้งเตือน
     let bgClass = 'bg-slate-800 text-white';
     let icon = '';
@@ -1044,7 +1044,7 @@ function updateCharts() {
 
     state.transactions.forEach(t => {
         totalGov += t.govSubsidy;
-        
+
         // คำนวณสัดส่วน
         const expectedGov = t.amount * 0.60;
         if (t.govSubsidy < expectedGov) {
@@ -1090,7 +1090,7 @@ function updateCharts() {
                 tooltip: {
                     enabled: !noData,
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             let label = context.label || '';
                             if (label) {
                                 label += ': ';
@@ -1114,14 +1114,22 @@ function updateCharts() {
 function checkEasterEgg(amount) {
     const num = parseFloat(amount);
     if (num === 67) {
+        // เล่นเสียงเอฟเฟกต์ 67
+        try {
+            const audio67 = new Audio('sound/AY 67 - Sound Effect (HD).mp3');
+            audio67.play().catch(e => console.log('Audio 67 playback blocked or failed:', e));
+        } catch (err) {
+            console.error('Audio 67 init error:', err);
+        }
+
         // ค้นหาการ์ดช่องคำนวณเงินหลัก
         const calculatorCard = document.getElementById('calculator-card');
         if (calculatorCard) {
             // ลบคลาสเก่าและทริกเกอร์ reflow เพื่อรันแอนิเมชันซ้ำได้
             calculatorCard.classList.remove('animate-shake');
-            void calculatorCard.offsetWidth; 
+            void calculatorCard.offsetWidth;
             calculatorCard.classList.add('animate-shake');
-            
+
             // ลบคลาสแอนิเมชันหลังจากสั่นจบ
             setTimeout(() => {
                 calculatorCard.classList.remove('animate-shake');
@@ -1152,14 +1160,22 @@ function checkEasterEgg(amount) {
 function checkEasterEgg76(amount) {
     const num = parseFloat(amount);
     if (num === 76) {
+        // เล่นเสียงเอฟเฟกต์ 76
+        try {
+            const audio76 = new Audio("sound/76.mp3");
+            audio76.play().catch(e => console.log('Audio 76 playback blocked or failed:', e));
+        } catch (err) {
+            console.error('Audio 76 init error:', err);
+        }
+
         // ค้นหาการ์ดช่องคำนวณเงินหลัก
         const calculatorCard = document.getElementById('calculator-card');
         if (calculatorCard) {
             // ลบคลาสเก่าและทริกเกอร์ reflow เพื่อรันแอนิเมชันซ้ำได้
             calculatorCard.classList.remove('animate-shake');
-            void calculatorCard.offsetWidth; 
+            void calculatorCard.offsetWidth;
             calculatorCard.classList.add('animate-shake');
-            
+
             // ลบคลาสแอนิเมชันหลังจากสั่นจบ
             setTimeout(() => {
                 calculatorCard.classList.remove('animate-shake');
