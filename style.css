@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
+
+/* ตั้งค่า Font เริ่มต้นสำหรับทั้งหน้าเว็บ */
+body {
+    font-family: 'Prompt', sans-serif;
+    background-color: #f8fafc; /* slate-50 */
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ลบปุ่มลูกศรของ Number Input */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* ตกแต่ง Scrollbar ให้ดูหรูหรา Clean */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1; /* slate-300 */
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; /* slate-400 */
+}
+
+/* สไตล์เฉพาะสำหรับเกจวงกลม SVG */
+.progress-ring {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+
+.progress-ring-circle {
+    transition: stroke-dashoffset 0.5s ease-in-out, stroke 0.5s ease-in-out;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.glass-dark-panel {
+    background: rgba(15, 23, 42, 0.95); /* slate-900 */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* โหลดแอนิเมชันตอนเปิดเว็บ */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* แอนิเมชันสำหรับปุ่มชีพจร (Pulse) ตอนสิทธิใกล้หมดหรือจำกัด */
+@keyframes softPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.03);
+        opacity: 0.9;
+    }
+}
+
+.animate-soft-pulse {
+    animation: softPulse 2s infinite ease-in-out;
+}
+
+/* ปรับแต่งปุ่มบนมือถือให้กดง่ายขึ้น (Active States) */
+.quick-amount-btn:active {
+    transform: scale(0.95);
+    background-color: #e2e8f0; /* slate-200 */
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+    filter: brightness(0.95);
+}
