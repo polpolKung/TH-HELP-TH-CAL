@@ -13,11 +13,34 @@ let state = {
     currentInput: 0 // ยอดเงินที่ผู้ใช้กำลังป้อน ณ ปัจจุบัน
 };
 
+// เก็บ instance ของ Chart.js
+let weeklyChartInstance = null;
+let budgetChartInstance = null;
+
+// ฟังก์ชันจัดรูปแบบวันเวลาสำหรับ datetime-local input
+function formatDateTimeLocal(date) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+}
+
+// ตั้งค่าเวลาเริ่มต้นให้ช่องอินพุตวันเวลาทำรายการ
+function setFormDateTimeDefault() {
+    const txTimeInput = document.getElementById('tx-time-input');
+    if (txTimeInput) {
+        txTimeInput.value = formatDateTimeLocal(getCurrentDate());
+    }
+}
+
 // เริ่มต้นโหลดข้อมูลเมื่อแอปเริ่มทำงาน
 function initApp() {
     loadTransactions();
     setupEventListeners();
     setupHelperCalculator();
+    setFormDateTimeDefault();
     updateUI();
 }
 
@@ -133,14 +156,19 @@ function calculateCopay(purchaseAmount) {
 }
 
 // เพิ่มรายการธุรกรรมใหม่
-function addTransaction(amount, note = '') {
+function addTransaction(amount, note = '', timestamp = null) {
     if (isNaN(amount) || amount <= 0) {
         showToast("กรุณากรอกยอดเงินที่ถูกต้อง", "error");
         return false;
     }
 
-    const currentDate = getCurrentDate();
+    const txTimestamp = timestamp || getCurrentDate().getTime();
+    
+    // ตั้งค่าเวลาชั่วคราวให้สอดคล้องกับรายการนี้เพื่อคำนวณสิทธิ ณ เสี้ยวเวลานั้นก่อนบันทึก
+    const tempSimTime = state.simulatedTime;
+    state.simulatedTime = txTimestamp;
     const result = calculateCopay(amount);
+    state.simulatedTime = tempSimTime; // คืนค่าเวลาจำลองเดิม
 
     if (result.govSubsidy <= 0 && amount > 0) {
         // ถ้ารัฐช่วยได้ 0 บาท เพราะสิทธิเต็มแล้ว ให้แจ้งเตือน แต่ยังยินยอมให้บันทึกได้โดยผู้ใช้จ่ายเองเต็มจำนวน
@@ -155,7 +183,7 @@ function addTransaction(amount, note = '') {
 
     const newTransaction = {
         id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-        timestamp: currentDate.getTime(),
+        timestamp: txTimestamp,
         amount: Number(amount),
         govSubsidy: result.govSubsidy,
         userPay: result.userPay,
@@ -163,12 +191,18 @@ function addTransaction(amount, note = '') {
     };
 
     state.transactions.unshift(newTransaction); // เอาไว้ด้านบนสุด
-    saveTransactions();
+    
+    // คำนวณความถูกต้องของสิทธิใหม่ทั้งหมดเผื่อมีการระบุวันเวลาในอดีตหรือข้ามลำดับเวลา
+    recalculateAllTransactions();
     updateUI();
+
+    // ทริกเกอร์ Easter Egg 67 บาทหากจ่าย 67 บาทถ้วนพอดี
+    checkEasterEgg(amount);
 
     // เคลียร์ค่าหลังจากบันทึกสำเร็จ
     document.getElementById('amount-input').value = '';
     document.getElementById('note-input').value = '';
+    setFormDateTimeDefault(); // คืนวันเวลากลับสู่เริ่มต้น
     state.currentInput = 0;
     updateCalculationPreview();
     
@@ -246,6 +280,8 @@ function editTransaction(id) {
     const tx = state.transactions.find(t => t.id === id);
     if (!tx) return;
 
+    const formattedTxTime = formatDateTimeLocal(new Date(tx.timestamp));
+
     Swal.fire({
         title: 'แก้ไขรายการใช้จ่าย',
         html: `
@@ -257,6 +293,10 @@ function editTransaction(id) {
                 <div class="flex flex-col gap-1">
                     <label class="text-xs font-semibold text-slate-500">บันทึกช่วยจำ</label>
                     <input id="swal-note" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500" value="${escapeHtml(tx.note)}">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold text-slate-500">วันเวลาที่ทำรายการ</label>
+                    <input id="swal-datetime" type="datetime-local" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500" value="${formattedTxTime}">
                 </div>
             </div>
         `,
@@ -289,21 +329,30 @@ function editTransaction(id) {
         preConfirm: () => {
             const amountVal = document.getElementById('swal-amount').value;
             const noteVal = document.getElementById('swal-note').value;
+            const datetimeVal = document.getElementById('swal-datetime').value;
             const amount = parseFloat(amountVal);
             if (isNaN(amount) || amount <= 0) {
                 Swal.showValidationMessage('กรุณากรอกยอดเงินที่ถูกต้องและมากกว่า 0');
                 return false;
             }
-            return { amount, note: noteVal };
+            if (!datetimeVal) {
+                Swal.showValidationMessage('กรุณาระบุวันเวลาที่ถูกต้อง');
+                return false;
+            }
+            return { amount, note: noteVal, datetime: datetimeVal };
         }
     }).then((result) => {
         if (result.isConfirmed) {
             tx.amount = result.value.amount;
             tx.note = result.value.note.trim() || 'รายการทั่วไป';
+            tx.timestamp = new Date(result.value.datetime).getTime();
             
             recalculateAllTransactions();
             updateUI();
             showToast("แก้ไขรายการเรียบร้อยแล้ว", "success");
+
+            // ทริกเกอร์ Easter Egg 67 บาทหากหลังแก้ไขมีค่าเป็น 67 บาทพอดี
+            checkEasterEgg(tx.amount);
         }
     });
 }
@@ -426,8 +475,8 @@ function updateUI() {
     document.getElementById('monthly-used').innerText = formatCurrency(govUsedThisMonth);
 
     // อัปเดตเกจวงกลม (SVG Dasharray) หรือ Progress Bar
-    updateProgressRing('daily-ring', govUsedToday, dailyLimit);
-    updateProgressRing('monthly-ring', govUsedThisMonth, monthlyLimit);
+    updateProgressRing('daily-ring', govUsedToday, dailyLimit, 'text-blue-600');
+    updateProgressRing('monthly-ring', govUsedThisMonth, monthlyLimit, 'text-amber-500');
 
     // 3. แสดงรายการประวัติย้อนหลัง (เรียงตามล่าสุด)
     const historyList = document.getElementById('history-list');
@@ -489,10 +538,13 @@ function updateUI() {
 
     // อัปเดตข้อมูลพรีวิวอีกครั้งหลังปรับปรุง State เผื่อสิทธิเปลี่ยน
     updateCalculationPreview();
+
+    // อัปเดตกราฟสถิติการใช้จ่ายสะสมทั้งหมด
+    updateCharts();
 }
 
-// อัปเดตสถานะเกจวงกลม SVG
-function updateProgressRing(ringId, usedValue, limitValue) {
+// อัปเดตสถานะเกจวงกลม SVG (รองรับสีเกจแยกตามสิทธิ์รายวัน/รายเดือน)
+function updateProgressRing(ringId, usedValue, limitValue, defaultColorClass) {
     const circle = document.getElementById(ringId);
     if (!circle) return;
 
@@ -516,11 +568,11 @@ function updateProgressRing(ringId, usedValue, limitValue) {
     }
 
     if (pct >= 100) {
-        circle.setAttribute('class', 'text-rose-500 transition-all duration-500 ease-out');
+        circle.setAttribute('class', 'progress-ring-circle text-rose-500 transition-all duration-500 ease-out');
     } else if (pct >= 80) {
-        circle.setAttribute('class', 'text-amber-500 transition-all duration-500 ease-out');
+        circle.setAttribute('class', 'progress-ring-circle text-amber-500 transition-all duration-500 ease-out');
     } else {
-        circle.setAttribute('class', 'text-blue-600 transition-all duration-500 ease-out');
+        circle.setAttribute('class', `progress-ring-circle ${defaultColorClass} transition-all duration-500 ease-out`);
     }
 }
 
@@ -541,6 +593,11 @@ function setupEventListeners() {
         
         this.value = val;
         updateCalculationPreview();
+
+        // ทริกเกอร์ Easter Egg ทันทีหากพิมพ์ตัวเลข 67 พอดี
+        if (val === '67') {
+            checkEasterEgg(67);
+        }
     });
 
     // ปุ่มฟอร์มส่งข้อมูล (บันทึก)
@@ -549,7 +606,12 @@ function setupEventListeners() {
         e.preventDefault();
         const amount = parseFloat(amountInput.value);
         const note = document.getElementById('note-input').value;
-        addTransaction(amount, note);
+        
+        // ดึงเวลาทำรายการจากตัวเลือก หรือใช้เวลาปัจจุบัน/เวลาท่องเที่ยว
+        const txTimeInput = document.getElementById('tx-time-input');
+        const timestamp = txTimeInput.value ? new Date(txTimeInput.value).getTime() : getCurrentDate().getTime();
+        
+        addTransaction(amount, note, timestamp);
     });
 
     // ปุ่มตัวเลขด่วน (Quick amount buttons) สำหรับการใช้งานบนมือถือ
@@ -562,6 +624,11 @@ function setupEventListeners() {
                 updateCalculationPreview();
                 // ดึงโฟกัสไปที่ Input
                 amountInput.focus();
+                
+                // เช็ค Easter Egg กรณีจิ้มปุ่ม
+                if (val === 67) {
+                    checkEasterEgg(67);
+                }
             }
         });
     });
@@ -575,6 +642,7 @@ function setupEventListeners() {
         applySimTimeBtn.addEventListener('click', function () {
             if (simTimeInput.value) {
                 state.simulatedTime = new Date(simTimeInput.value).getTime();
+                setFormDateTimeDefault(); // ซิงค์ช่องอินพุตวันทำรายการตามเวลาที่จำลอง
                 updateUI();
                 showToast("เปลี่ยนวันเวลาจำลองสำเร็จ", "success");
             } else {
@@ -587,6 +655,7 @@ function setupEventListeners() {
         resetSimTimeBtn.addEventListener('click', function () {
             state.simulatedTime = null;
             simTimeInput.value = '';
+            setFormDateTimeDefault(); // คืนค่าวันทำรายการกลับสู่เวลาปัจจุบันจริง
             updateUI();
             showToast("กลับสู่วันเวลาปัจจุบันแล้ว", "success");
         });
@@ -842,6 +911,220 @@ function showToast(message, type = 'success') {
             toast.remove();
         }, 300);
     }, 3500);
+}
+
+// ฟังก์ชันวาดและอัปเดตกราฟสถิติการใช้จ่ายด้วย Chart.js
+function updateCharts() {
+    // 1. ดึง Elements สำหรับกราฟ
+    const weeklyCanvas = document.getElementById('weekly-line-chart');
+    const budgetCanvas = document.getElementById('budget-doughnut-chart');
+
+    if (!weeklyCanvas || !budgetCanvas) return;
+
+    // ทำลายกราฟอันเก่าก่อนสร้างใหม่เพื่อป้องกันบั๊ก hover
+    if (weeklyChartInstance) {
+        weeklyChartInstance.destroy();
+    }
+    if (budgetChartInstance) {
+        budgetChartInstance.destroy();
+    }
+
+    // คำนวณวันย้อนหลัง 7 วันจากวันปัจจุบันจริงหรือท่องเที่ยว
+    const curDate = getCurrentDate();
+    const past7Days = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(curDate);
+        d.setDate(curDate.getDate() - i);
+        past7Days.push(d);
+    }
+
+    // สร้างป้ายชื่อแกน X (เช่น "25 พ.ค.")
+    const labels = past7Days.map(d => {
+        return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+    });
+
+    // คำนวณยอดเงินของประวัติในแต่ละวัน
+    const spendData = past7Days.map(d => {
+        return state.transactions
+            .filter(t => isSameDay(new Date(t.timestamp), d))
+            .reduce((sum, t) => sum + t.amount, 0);
+    });
+
+    const govData = past7Days.map(d => {
+        return state.transactions
+            .filter(t => isSameDay(new Date(t.timestamp), d))
+            .reduce((sum, t) => sum + t.govSubsidy, 0);
+    });
+
+    // วาดกราฟเส้นรายวันย้อนหลัง 1 สัปดาห์
+    const ctxWeekly = weeklyCanvas.getContext('2d');
+    weeklyChartInstance = new Chart(ctxWeekly, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'ยอดช้อปปิ้งสินค้าทั้งหมด (บาท)',
+                    data: spendData,
+                    borderColor: '#4f46e5', // indigo-600
+                    backgroundColor: 'rgba(79, 70, 229, 0.05)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: '#4f46e5',
+                    pointRadius: 4
+                },
+                {
+                    label: 'ส่วนที่รัฐช่วยสนับสนุนจ่าย (บาท)',
+                    data: govData,
+                    borderColor: '#d97706', // govGold
+                    backgroundColor: 'transparent',
+                    borderWidth: 2.5,
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.35,
+                    pointBackgroundColor: '#d97706',
+                    pointRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: { family: 'Prompt', size: 11 }
+                    }
+                },
+                tooltip: {
+                    titleFont: { family: 'Prompt' },
+                    bodyFont: { family: 'Prompt' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        font: { family: 'Prompt', size: 10 }
+                    },
+                    grid: { color: '#f1f5f9' }
+                },
+                x: {
+                    ticks: {
+                        font: { family: 'Prompt', size: 10 }
+                    },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // คำนวณผลรวมสำหรับกราฟวงกลมสรุปสัดส่วนเงินจ่าย
+    let totalGov = 0;
+    let totalUserPayBase = 0; // ยอดจ่ายจริง 40% (ไม่รวมส่วนเกินเพดาน)
+    let totalExcess = 0;      // ยอดส่วนเกินชนเพดานที่ต้องรับภาระเอง
+
+    state.transactions.forEach(t => {
+        totalGov += t.govSubsidy;
+        
+        // คำนวณสัดส่วน
+        const expectedGov = t.amount * 0.60;
+        if (t.govSubsidy < expectedGov) {
+            // เกิดการชนเพดานสิทธิ์
+            const diff = expectedGov - t.govSubsidy;
+            totalExcess += diff;
+            totalUserPayBase += (t.amount - t.govSubsidy - diff);
+        } else {
+            totalUserPayBase += t.userPay;
+        }
+    });
+
+    // ปัดเศษทศนิยมเพื่อความเป๊ะ
+    totalGov = Math.round(totalGov * 100) / 100;
+    totalUserPayBase = Math.round(totalUserPayBase * 100) / 100;
+    totalExcess = Math.round(totalExcess * 100) / 100;
+
+    const noData = (totalGov === 0 && totalUserPayBase === 0 && totalExcess === 0);
+
+    const ctxBudget = budgetCanvas.getContext('2d');
+    budgetChartInstance = new Chart(ctxBudget, {
+        type: 'doughnut',
+        data: {
+            labels: noData ? ['ยังไม่มีข้อมูลประวัติ'] : ['รัฐสนับสนุนจ่าย (60%)', 'คุณจ่ายตามเกณฑ์ (40%)', 'ส่วนเกินจ่ายเอง (ชนเพดาน)'],
+            datasets: [{
+                data: noData ? [1] : [totalGov, totalUserPayBase, totalExcess],
+                backgroundColor: noData ? ['#cbd5e1'] : ['#2563eb', '#10b981', '#f43f5e'], // blue, emerald, rose
+                hoverOffset: 4,
+                borderWidth: noData ? 1 : 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        font: { family: 'Prompt', size: 10 }
+                    }
+                },
+                tooltip: {
+                    enabled: !noData,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed !== null) {
+                                label += formatCurrency(context.parsed) + ' บาท';
+                            }
+                            return label;
+                        }
+                    },
+                    titleFont: { family: 'Prompt' },
+                    bodyFont: { family: 'Prompt' }
+                }
+            },
+            cutout: '60%'
+        }
+    });
+}
+
+// ตรวจสอบและทริกเกอร์แอนิเมชัน Easter Egg 67 บาท
+function checkEasterEgg(amount) {
+    if (amount === 67) {
+        // ค้นหาการ์ดช่องคำนวณเงินหลัก
+        const calculatorCard = document.querySelector('section.lg:col-span-6');
+        if (calculatorCard) {
+            // ลบคลาสเก่าและทริกเกอร์ reflow เพื่อรันแอนิเมชันซ้ำได้
+            calculatorCard.classList.remove('animate-shake');
+            void calculatorCard.offsetWidth; 
+            calculatorCard.classList.add('animate-shake');
+            
+            // ลบคลาสแอนิเมชันหลังจากสั่นจบ
+            setTimeout(() => {
+                calculatorCard.classList.remove('animate-shake');
+            }, 700);
+        }
+
+        // แสดง Swal ป๊อปอัพน่ารักๆ แจ้งเตือนความมงคล
+        Swal.fire({
+            title: '🔮 ยินดีด้วย! คุณพบ Easter Egg 67!',
+            text: 'หน้าจอหลักสั่นดุ๊กดิ๊กไปเลยจ้า! เลข 67 นี้มีพลังวิเศษอันเป็นสิริมงคลอะไรแฝงอยู่แน่ๆ! 🛸✨',
+            icon: 'success',
+            timer: 3500,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            background: '#ffffff',
+            customClass: {
+                popup: 'rounded-3xl font-prompt shadow-xl border border-slate-100 bg-white text-slate-800'
+            }
+        });
+    }
 }
 
 // บูตแอปพลิเคชันเมื่อหน้าเว็บพร้อมทำงาน

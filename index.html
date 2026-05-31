@@ -33,6 +33,8 @@
     <link rel="stylesheet" href="style.css">
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="bg-slate-50 min-h-screen text-slate-800 pb-12">
@@ -243,6 +245,13 @@
                                 class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 focus:border-blue-500 focus:bg-white rounded-xl text-sm text-slate-700 outline-none transition duration-150">
                         </div>
 
+                        <!-- Date & Time Input (Editable, Auto captured) -->
+                        <div class="flex flex-col gap-1.5">
+                            <label for="tx-time-input" class="text-sm font-semibold text-slate-600">วันเวลาที่ทำรายการ (ระบุอัตโนมัติ)</label>
+                            <input type="datetime-local" id="tx-time-input" required
+                                class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 focus:border-blue-500 focus:bg-white rounded-xl text-sm text-slate-700 outline-none transition duration-150">
+                        </div>
+
                         <!-- Real-time Warning Label -->
                         <div id="preview-warning"
                             class="hidden text-center text-xs p-3 rounded-xl bg-slate-50 border border-slate-100">
@@ -307,7 +316,7 @@
 
                 <!-- Daily Quota Card -->
                 <div
-                    class="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 flex flex-col items-center justify-between min-h-[190px]">
+                    class="bg-white rounded-3xl shadow-sm border border-blue-100/60 bg-gradient-to-tr from-white to-blue-50/20 p-5 flex flex-col items-center justify-between min-h-[190px] shadow-sm hover:shadow-md transition duration-200">
                     <div class="w-full flex items-center justify-between mb-3">
                         <div class="flex items-center gap-1.5">
                             <span class="p-1 rounded bg-blue-50 text-blue-600">
@@ -316,7 +325,7 @@
                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </span>
-                            <h2 class="font-bold text-slate-700 text-sm">สิทธิคงเหลือรายวัน</h2>
+                            <h2 class="font-bold text-blue-900 text-sm">สิทธิคงเหลือรายวัน</h2>
                         </div>
                         <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-semibold">200
                             บ./วัน</span>
@@ -332,23 +341,23 @@
                                     stroke-dasharray="238.76" stroke-dashoffset="238.76" stroke-linecap="round"
                                     stroke="currentColor" fill="transparent" r="38" cx="45" cy="45" />
                             </svg>
-                            <span class="percent-text absolute text-xs font-extrabold text-slate-700">0%</span>
+                            <span class="percent-text absolute text-xs font-extrabold text-blue-700">0%</span>
                         </div>
 
                         <div class="flex flex-col min-w-0">
-                            <span class="text-xl md:text-2xl font-extrabold text-slate-900 leading-tight">
+                            <span class="text-xl md:text-2xl font-extrabold text-blue-950 leading-tight">
                                 <span id="daily-remaining">0.00</span> <span
-                                    class="text-[10px] font-semibold text-slate-500">บาท</span>
+                                    class="text-[10px] font-semibold text-blue-500">บาท</span>
                             </span>
-                            <span class="text-[11px] text-slate-400 mt-0.5">ใช้แล้ว: <span id="daily-used"
-                                    class="font-semibold text-slate-600">0.00</span> บ.</span>
+                            <span class="text-[11px] text-blue-600/70 mt-0.5">ใช้แล้ว: <span id="daily-used"
+                                    class="font-semibold text-blue-700">0.00</span> บ.</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Monthly Quota Card -->
                 <div
-                    class="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 flex flex-col items-center justify-between min-h-[190px]">
+                    class="bg-white rounded-3xl shadow-sm border border-amber-100/60 bg-gradient-to-tr from-white to-amber-50/20 p-5 flex flex-col items-center justify-between min-h-[190px] shadow-sm hover:shadow-md transition duration-200">
                     <div class="w-full flex items-center justify-between mb-3">
                         <div class="flex items-center gap-1.5">
                             <span class="p-1 rounded bg-amber-50 text-amber-600">
@@ -358,7 +367,7 @@
                                     </path>
                                 </svg>
                             </span>
-                            <h2 class="font-bold text-slate-700 text-sm">สิทธิคงเหลือรายเดือน</h2>
+                            <h2 class="font-bold text-amber-900 text-sm">สิทธิคงเหลือรายเดือน</h2>
                         </div>
                         <span
                             class="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-semibold">1,000
@@ -371,20 +380,20 @@
                             <svg class="w-full h-full progress-ring" viewBox="0 0 90 90">
                                 <circle class="text-slate-100" stroke-width="8" stroke="currentColor" fill="transparent"
                                     r="38" cx="45" cy="45" />
-                                <circle id="monthly-ring" class="progress-ring-circle text-blue-600" stroke-width="8"
+                                <circle id="monthly-ring" class="progress-ring-circle text-amber-500" stroke-width="8"
                                     stroke-dasharray="238.76" stroke-dashoffset="238.76" stroke-linecap="round"
                                     stroke="currentColor" fill="transparent" r="38" cx="45" cy="45" />
                             </svg>
-                            <span class="percent-text absolute text-xs font-extrabold text-slate-700">0%</span>
+                            <span class="percent-text absolute text-xs font-extrabold text-amber-700">0%</span>
                         </div>
 
                         <div class="flex flex-col min-w-0">
-                            <span class="text-xl md:text-2xl font-extrabold text-slate-900 leading-tight">
+                            <span class="text-xl md:text-2xl font-extrabold text-amber-950 leading-tight">
                                 <span id="monthly-remaining">0.00</span> <span
-                                    class="text-[10px] font-semibold text-slate-500">บาท</span>
+                                    class="text-[10px] font-semibold text-amber-600">บาท</span>
                             </span>
-                            <span class="text-[11px] text-slate-400 mt-0.5">ใช้แล้ว: <span id="monthly-used"
-                                    class="font-semibold text-slate-600">0.00</span> บ.</span>
+                            <span class="text-[11px] text-amber-600/70 mt-0.5">ใช้แล้ว: <span id="monthly-used"
+                                    class="font-semibold text-amber-700">0.00</span> บ.</span>
                         </div>
                     </div>
                 </div>
@@ -459,6 +468,40 @@
 
             </section>
         </div>
+
+        <!-- SECTION 4: Analytics Dashboard (บอร์ดแสดงกราฟสถิติการใช้งานแสนสวย) -->
+        <section class="mt-8 animate-fade-in-up" style="animation-delay: 0.3s;">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+                <h2 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-2 mb-6">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    รายงานสถิติการใช้จ่าย & แดชบอร์ดวิเคราะห์
+                </h2>
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                    <!-- Line Chart: 7 Days spending (8 cols on lg) -->
+                    <div class="lg:col-span-8 bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col gap-3 min-h-[320px]">
+                        <h3 class="font-semibold text-slate-700 text-sm flex items-center gap-1.5">
+                            📈 กราฟเส้นการใช้จ่ายรายวัน (ย้อนหลัง 1 อาทิตย์)
+                        </h3>
+                        <div class="flex-1 min-h-[220px] relative">
+                            <canvas id="weekly-line-chart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Doughnut Chart: Total Copay (4 cols on lg) -->
+                    <div class="lg:col-span-4 bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col gap-3 justify-between items-stretch min-h-[320px]">
+                        <h3 class="font-semibold text-slate-700 text-sm flex items-center gap-1.5">
+                            📊 สัดส่วนประเภทยอดเงินใช้จ่ายสะสมทั้งหมด
+                        </h3>
+                        <div class="flex-1 flex items-center justify-center py-4">
+                            <div class="w-full max-w-[200px] aspect-square relative">
+                                <canvas id="budget-doughnut-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- Footer -->
