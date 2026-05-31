@@ -10,7 +10,8 @@ const STORAGE_KEY = 'th_help_th_transactions';
 let state = {
     transactions: [],
     simulatedTime: null, // เก็บ timestamp สำหรับจำลองเวลา (ถ้ามี)
-    currentInput: 0 // ยอดเงินที่ผู้ใช้กำลังป้อน ณ ปัจจุบัน
+    currentInput: 0, // ยอดเงินที่ผู้ใช้กำลังป้อน ณ ปัจจุบัน
+    easterEggTriggered: false // ป้องกันการเรียกเตือนสั่นสะเทือน Easter Egg ซ้ำซ้อนวนลูป
 };
 
 // เก็บ instance ของ Chart.js
@@ -403,6 +404,16 @@ function updateCalculationPreview() {
     document.getElementById('preview-user').innerText = formatCurrency(result.userPay);
     document.getElementById('preview-total').innerText = formatCurrency(state.currentInput);
 
+    // ตรวจสอบและแสดงป๊อปอัพสั่นสะเทือน Easter Egg 67 บาท
+    if (state.currentInput === 67) {
+        if (!state.easterEggTriggered) {
+            state.easterEggTriggered = true;
+            checkEasterEgg(67);
+        }
+    } else {
+        state.easterEggTriggered = false; // คืนค่าเพื่อให้สามารถแสดงแอนิเมชันได้อีกครั้งเมื่อเป็นเลขอื่นแล้วกลับมาเป็น 67
+    }
+
     // แสดง/ซ่อน แผงยอดส่วนเกิน
     const excessContainer = document.getElementById('preview-excess-container');
     const excessDisplay = document.getElementById('preview-excess');
@@ -593,11 +604,6 @@ function setupEventListeners() {
         
         this.value = val;
         updateCalculationPreview();
-
-        // ทริกเกอร์ Easter Egg ทันทีหากพิมพ์ตัวเลข 67 พอดี
-        if (val === '67') {
-            checkEasterEgg(67);
-        }
     });
 
     // ปุ่มฟอร์มส่งข้อมูล (บันทึก)
@@ -624,11 +630,6 @@ function setupEventListeners() {
                 updateCalculationPreview();
                 // ดึงโฟกัสไปที่ Input
                 amountInput.focus();
-                
-                // เช็ค Easter Egg กรณีจิ้มปุ่ม
-                if (val === 67) {
-                    checkEasterEgg(67);
-                }
             }
         });
     });
@@ -915,6 +916,12 @@ function showToast(message, type = 'success') {
 
 // ฟังก์ชันวาดและอัปเดตกราฟสถิติการใช้จ่ายด้วย Chart.js
 function updateCharts() {
+    // ป้องกันการแครชหาก Chart.js ไม่ถูกโหลด (เช่น ออฟไลน์ หรือ CDN โดนบล็อก)
+    if (typeof Chart === 'undefined') {
+        console.warn("Chart.js is not defined (probably offline or CDN failed)");
+        return;
+    }
+
     // 1. ดึง Elements สำหรับกราฟ
     const weeklyCanvas = document.getElementById('weekly-line-chart');
     const budgetCanvas = document.getElementById('budget-doughnut-chart');
@@ -1096,9 +1103,10 @@ function updateCharts() {
 
 // ตรวจสอบและทริกเกอร์แอนิเมชัน Easter Egg 67 บาท
 function checkEasterEgg(amount) {
-    if (amount === 67) {
+    const num = parseFloat(amount);
+    if (num === 67) {
         // ค้นหาการ์ดช่องคำนวณเงินหลัก
-        const calculatorCard = document.querySelector('section.lg:col-span-6');
+        const calculatorCard = document.getElementById('calculator-card');
         if (calculatorCard) {
             // ลบคลาสเก่าและทริกเกอร์ reflow เพื่อรันแอนิเมชันซ้ำได้
             calculatorCard.classList.remove('animate-shake');
@@ -1111,19 +1119,23 @@ function checkEasterEgg(amount) {
             }, 700);
         }
 
-        // แสดง Swal ป๊อปอัพน่ารักๆ แจ้งเตือนความมงคล
-        Swal.fire({
-            title: '🔮 ยินดีด้วย! คุณพบ Easter Egg 67!',
-            text: 'หน้าจอหลักสั่นดุ๊กดิ๊กไปเลยจ้า! เลข 67 นี้มีพลังวิเศษอันเป็นสิริมงคลอะไรแฝงอยู่แน่ๆ! 🛸✨',
-            icon: 'success',
-            timer: 3500,
-            timerProgressBar: true,
-            showConfirmButton: false,
-            background: '#ffffff',
-            customClass: {
-                popup: 'rounded-3xl font-prompt shadow-xl border border-slate-100 bg-white text-slate-800'
-            }
-        });
+        // ป้องกันการแครชหาก Swal ไม่โหลด โดยใช้ Alert ดั้งเดิมเป็นทางเลือก
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '🔮 ยินดีด้วย! คุณพบ Easter Egg 67!',
+                text: 'หน้าจอหลักสั่นดุ๊กดิ๊กไปเลยจ้า! เลข 67 นี้มีพลังวิเศษอันเป็นสิริมงคลอะไรแฝงอยู่แน่ๆ! 🛸✨',
+                icon: 'success',
+                timer: 3500,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                background: '#ffffff',
+                customClass: {
+                    popup: 'rounded-3xl font-prompt shadow-xl border border-slate-100 bg-white text-slate-800'
+                }
+            });
+        } else {
+            console.log('🔮 ยินดีด้วย! คุณพบ Easter Egg 67! (หน้าจอหลักสั่นดุ๊กดิ๊กไปเลยจ้า!)');
+        }
     }
 }
 
