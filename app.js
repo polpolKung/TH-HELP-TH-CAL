@@ -199,6 +199,8 @@ function addTransaction(amount, note = '', timestamp = null) {
 
     // ทริกเกอร์ Easter Egg 67 บาทหากจ่าย 67 บาทถ้วนพอดี
     checkEasterEgg(amount);
+    // ทริกเกอร์ Easter Egg 76 (Soldier: 76) หากจ่าย 76 บาทถ้วนพอดี
+    checkEasterEgg76(amount);
 
     // เคลียร์ค่าหลังจากบันทึกสำเร็จ
     document.getElementById('amount-input').value = '';
@@ -354,6 +356,8 @@ function editTransaction(id) {
 
             // ทริกเกอร์ Easter Egg 67 บาทหากหลังแก้ไขมีค่าเป็น 67 บาทพอดี
             checkEasterEgg(tx.amount);
+            // ทริกเกอร์ Easter Egg 76 (Soldier: 76)
+            checkEasterEgg76(tx.amount);
         }
     });
 }
@@ -410,8 +414,13 @@ function updateCalculationPreview() {
             state.easterEggTriggered = true;
             checkEasterEgg(67);
         }
+    } else if (state.currentInput === 76) {
+        if (!state.easterEggTriggered) {
+            state.easterEggTriggered = true;
+            checkEasterEgg76(76);
+        }
     } else {
-        state.easterEggTriggered = false; // คืนค่าเพื่อให้สามารถแสดงแอนิเมชันได้อีกครั้งเมื่อเป็นเลขอื่นแล้วกลับมาเป็น 67
+        state.easterEggTriggered = false; // คืนค่าเพื่อให้สามารถแสดงแอนิเมชันได้อีกครั้งเมื่อเป็นเลขอื่นแล้วกลับมาเป็น 67 หรือ 76
     }
 
     // แสดง/ซ่อน แผงยอดส่วนเกิน
@@ -431,10 +440,10 @@ function updateCalculationPreview() {
             warningText.innerHTML = `<span class="text-rose-600 font-semibold">⚠️ สิทธิการช่วยเหลือหมดแล้ว! คุณต้องจ่ายเอง 100% (ส่วนเกินที่คุณต้องจ่ายเพิ่มเองคือ ${formatCurrency(result.excessPay)} บ.)</span>`;
             warningText.classList.remove('hidden');
         } else if (result.isDailyCapped) {
-            warningText.innerHTML = `<span class="text-amber-600 font-semibold">⚠️ ชนเพดานสิทธิรายวัน! รัฐช่วยได้เพียง ${formatCurrency(result.govSubsidy)} บ. (ส่วนที่คุณต้องจ่ายเพิ่มเองคือ ${formatCurrency(result.excessPay)} บ.)</span>`;
+            warningText.innerHTML = `<span class="text-orange-600 font-semibold">⚠️ ชนเพดานสิทธิรายวัน! รัฐช่วยได้เพียง ${formatCurrency(result.govSubsidy)} บ. (ส่วนที่คุณต้องจ่ายเพิ่มเองคือ ${formatCurrency(result.excessPay)} บ.)</span>`;
             warningText.classList.remove('hidden');
         } else if (result.isMonthlyCapped) {
-            warningText.innerHTML = `<span class="text-amber-600 font-semibold">⚠️ ชนเพดานสิทธิรายเดือน! รัฐช่วยได้เพียง ${formatCurrency(result.govSubsidy)} บ. (ส่วนที่คุณต้องจ่ายเพิ่มเองคือ ${formatCurrency(result.excessPay)} บ.)</span>`;
+            warningText.innerHTML = `<span class="text-orange-600 font-semibold">⚠️ ชนเพดานสิทธิรายเดือน! รัฐช่วยได้เพียง ${formatCurrency(result.govSubsidy)} บ. (ส่วนที่คุณต้องจ่ายเพิ่มเองคือ ${formatCurrency(result.excessPay)} บ.)</span>`;
             warningText.classList.remove('hidden');
         } else {
             warningText.innerHTML = `<span class="text-emerald-600 font-semibold">✓ คำนวณตามเกณฑ์รัฐช่วย 60% / คุณจ่าย 40%</span>`;
@@ -487,7 +496,7 @@ function updateUI() {
 
     // อัปเดตเกจวงกลม (SVG Dasharray) หรือ Progress Bar
     updateProgressRing('daily-ring', govUsedToday, dailyLimit, 'text-blue-600');
-    updateProgressRing('monthly-ring', govUsedThisMonth, monthlyLimit, 'text-amber-500');
+    updateProgressRing('monthly-ring', govUsedThisMonth, monthlyLimit, 'text-green-500');
 
     // 3. แสดงรายการประวัติย้อนหลัง (เรียงตามล่าสุด)
     const historyList = document.getElementById('history-list');
@@ -581,7 +590,7 @@ function updateProgressRing(ringId, usedValue, limitValue, defaultColorClass) {
     if (pct >= 100) {
         circle.setAttribute('class', 'progress-ring-circle text-rose-500 transition-all duration-500 ease-out');
     } else if (pct >= 80) {
-        circle.setAttribute('class', 'progress-ring-circle text-amber-500 transition-all duration-500 ease-out');
+        circle.setAttribute('class', 'progress-ring-circle text-orange-500 transition-all duration-500 ease-out');
     } else {
         circle.setAttribute('class', `progress-ring-circle ${defaultColorClass} transition-all duration-500 ease-out`);
     }
@@ -885,7 +894,7 @@ function showToast(message, type = 'success') {
         bgClass = 'bg-emerald-600 text-white';
         icon = `<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>`;
     } else if (type === 'warning') {
-        bgClass = 'bg-amber-500 text-slate-900';
+        bgClass = 'bg-orange-500 text-white';
         icon = `<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
     } else if (type === 'error') {
         bgClass = 'bg-rose-600 text-white';
@@ -984,13 +993,13 @@ function updateCharts() {
                 {
                     label: 'ส่วนที่รัฐช่วยสนับสนุนจ่าย (บาท)',
                     data: govData,
-                    borderColor: '#d97706', // govGold
+                    borderColor: '#4caf50', // govGreen
                     backgroundColor: 'transparent',
                     borderWidth: 2.5,
                     borderDash: [5, 5],
                     fill: false,
                     tension: 0.35,
-                    pointBackgroundColor: '#d97706',
+                    pointBackgroundColor: '#4caf50',
                     pointRadius: 4
                 }
             ]
@@ -1062,7 +1071,7 @@ function updateCharts() {
             labels: noData ? ['ยังไม่มีข้อมูลประวัติ'] : ['รัฐสนับสนุนจ่าย (60%)', 'คุณจ่ายตามเกณฑ์ (40%)', 'ส่วนเกินจ่ายเอง (ชนเพดาน)'],
             datasets: [{
                 data: noData ? [1] : [totalGov, totalUserPayBase, totalExcess],
-                backgroundColor: noData ? ['#cbd5e1'] : ['#2563eb', '#10b981', '#f43f5e'], // blue, emerald, rose
+                backgroundColor: noData ? ['#cbd5e1'] : ['#1e3a6b', '#4caf50', '#f43f5e'], // govNavy, govGreen, rose
                 hoverOffset: 4,
                 borderWidth: noData ? 1 : 2
             }]
@@ -1135,6 +1144,52 @@ function checkEasterEgg(amount) {
             });
         } else {
             console.log('🔮 ยินดีด้วย! คุณพบ Easter Egg 67! (หน้าจอหลักสั่นดุ๊กดิ๊กไปเลยจ้า!)');
+        }
+    }
+}
+
+// ตรวจสอบและทริกเกอร์ Easter Egg Soldier: 76 จาก Overwatch
+function checkEasterEgg76(amount) {
+    const num = parseFloat(amount);
+    if (num === 76) {
+        // ค้นหาการ์ดช่องคำนวณเงินหลัก
+        const calculatorCard = document.getElementById('calculator-card');
+        if (calculatorCard) {
+            // ลบคลาสเก่าและทริกเกอร์ reflow เพื่อรันแอนิเมชันซ้ำได้
+            calculatorCard.classList.remove('animate-shake');
+            void calculatorCard.offsetWidth; 
+            calculatorCard.classList.add('animate-shake');
+            
+            // ลบคลาสแอนิเมชันหลังจากสั่นจบ
+            setTimeout(() => {
+                calculatorCard.classList.remove('animate-shake');
+            }, 700);
+        }
+
+        // แสดง Soldier: 76 popup ด้วย SweetAlert2
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '🎯 Soldier: 76 Reporting!',
+                html: `
+                    <div class="flex flex-col items-center gap-3">
+                        <img src="picture/soldier76.png" alt="Soldier: 76" class="w-48 h-48 object-contain rounded-2xl shadow-lg border-2 border-blue-200" />
+                        <p class="text-sm text-slate-600 font-prompt">
+                            <strong class="text-blue-700">"We're all soldiers now."</strong><br>
+                            <span class="text-xs text-slate-400">เลข 76 ปลดล็อก Easter Egg ทหารผ่านศึกแห่ง Overwatch! 🔫💥</span>
+                        </p>
+                    </div>
+                `,
+                icon: undefined,
+                timer: 5000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                background: '#ffffff',
+                customClass: {
+                    popup: 'rounded-3xl font-prompt shadow-xl border border-blue-100 bg-white text-slate-800'
+                }
+            });
+        } else {
+            console.log('🎯 Soldier: 76 Reporting! "We\'re all soldiers now."');
         }
     }
 }

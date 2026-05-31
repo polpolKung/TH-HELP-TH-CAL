@@ -15,14 +15,18 @@
                 extend: {
                     colors: {
                         govNavy: {
-                            DEFAULT: '#0f2a4a',
-                            light: '#1e3d64',
-                            dark: '#0a1d33',
+                            DEFAULT: '#1e3a6b',
+                            light: '#2a4d85',
+                            dark: '#142a50',
                         },
-                        govGold: {
-                            DEFAULT: '#d97706',
-                            light: '#f59e0b',
-                            dark: '#b45309',
+                        govGreen: {
+                            DEFAULT: '#4caf50',
+                            light: '#66bb6a',
+                            dark: '#388e3c',
+                        },
+                        govRed: {
+                            DEFAULT: '#e53935',
+                            light: '#ef5350',
                         }
                     }
                 }
@@ -44,12 +48,12 @@
         class="fixed top-4 right-4 left-4 md:left-auto flex flex-col gap-2 z-50 pointer-events-none"></div>
 
     <!-- Header / Nav Banner -->
-    <header class="bg-govNavy text-white shadow-md border-b border-govGold/30">
+    <header class="bg-govNavy text-white shadow-md border-b border-govGreen/30">
         <div
             class="max-w-6xl mx-auto px-4 py-4 md:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div class="flex items-center gap-3">
                 <!-- Emblem Icon / Logo -->
-                <div class="bg-gradient-to-tr from-amber-400 to-yellow-500 p-2.5 rounded-2xl shadow-md shrink-0">
+                <div class="bg-gradient-to-tr from-govGreen to-govGreen-light p-2.5 rounded-2xl shadow-md shrink-0">
                     <svg class="w-7 h-7 text-govNavy font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
@@ -59,19 +63,25 @@
                 </div>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold tracking-wide">ไทยช่วยไทย พลัส <span
-                            class="text-amber-400">60/40</span></h1>
+                            class="text-govGreen-light">60/40</span></h1>
                     <p class="text-xs text-slate-300">เครื่องคำนวณยอดจ่ายจริง ส่วนช่วยรัฐ และสิทธิคงเหลือแบบเรียลไทม์
                     </p>
                 </div>
             </div>
 
             <!-- Time Badge & Status -->
-            <div class="flex flex-col items-start md:items-end gap-1">
-                <div id="time-travel-badge"
-                    class="hidden px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-400 text-govNavy animate-soft-pulse">
+            <div class="flex flex-col items-start md:items-end gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <a href="picture/infographic.png" target="_blank"
+                        class="px-3 py-1.5 bg-govGreen hover:bg-govGreen-dark text-slate-950 text-xs font-bold rounded-xl flex items-center gap-1.5 transition active:scale-95 shadow-sm">
+                        📖 คู่มือ & อินโฟกราฟิก
+                    </a>
+                    <div id="time-travel-badge"
+                        class="hidden px-2.5 py-0.5 rounded-full text-xs font-semibold bg-govGreen-light text-white animate-soft-pulse">
+                    </div>
                 </div>
                 <div class="flex items-center gap-2 text-xs md:text-sm text-slate-300">
-                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 text-govGreen-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
                         </path>
@@ -96,7 +106,7 @@
                         class="bg-gradient-to-r from-govNavy to-govNavy-light p-6 text-white flex justify-between items-center">
                         <div>
                             <h2 class="text-lg font-bold flex items-center gap-2">
-                                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor"
+                                <svg class="w-5 h-5 text-govGreen-light" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 11h.01M12 7h.01M9 11h.01M15 11h.01M12 14h.01M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z">
@@ -149,7 +159,7 @@
                                 <div id="calc-expression"
                                     class="text-xs text-slate-500 font-mono tracking-wider truncate min-h-[16px] mb-0.5">
                                 </div>
-                                <div id="calc-display" class="text-xl font-bold font-mono text-amber-400 truncate">0
+                                <div id="calc-display" class="text-xl font-bold font-mono text-green-400 truncate">0
                                 </div>
                             </div>
                             <!-- Buttons -->
@@ -164,7 +174,7 @@
                                     class="calc-btn py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-lg text-sm font-semibold transition"
                                     data-val="9">9</button>
                                 <button type="button"
-                                    class="calc-btn py-2 bg-amber-600 text-slate-950 font-bold hover:bg-amber-500 active:scale-95 rounded-lg text-sm transition"
+                                    class="calc-btn py-2 bg-govGreen text-white font-bold hover:bg-govGreen-light active:scale-95 rounded-lg text-sm transition"
                                     data-val="/">÷</button>
 
                                 <button type="button"
@@ -177,7 +187,7 @@
                                     class="calc-btn py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-lg text-sm font-semibold transition"
                                     data-val="6">6</button>
                                 <button type="button"
-                                    class="calc-btn py-2 bg-amber-600 text-slate-950 font-bold hover:bg-amber-500 active:scale-95 rounded-lg text-sm transition"
+                                    class="calc-btn py-2 bg-govGreen text-white font-bold hover:bg-govGreen-light active:scale-95 rounded-lg text-sm transition"
                                     data-val="*">×</button>
 
                                 <button type="button"
@@ -190,7 +200,7 @@
                                     class="calc-btn py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-lg text-sm font-semibold transition"
                                     data-val="3">3</button>
                                 <button type="button"
-                                    class="calc-btn py-2 bg-amber-600 text-slate-950 font-bold hover:bg-amber-500 active:scale-95 rounded-lg text-sm transition"
+                                    class="calc-btn py-2 bg-govGreen text-white font-bold hover:bg-govGreen-light active:scale-95 rounded-lg text-sm transition"
                                     data-val="-">-</button>
 
                                 <button type="button"
@@ -203,7 +213,7 @@
                                     class="calc-btn py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 rounded-lg text-sm font-bold text-white transition"
                                     id="calc-equal">=</button>
                                 <button type="button"
-                                    class="calc-btn py-2 bg-amber-600 text-slate-950 font-bold hover:bg-amber-500 active:scale-95 rounded-lg text-sm transition"
+                                    class="calc-btn py-2 bg-govGreen text-white font-bold hover:bg-govGreen-light active:scale-95 rounded-lg text-sm transition"
                                     data-val="+">+</button>
                             </div>
                             <div class="flex gap-2">
@@ -299,7 +309,7 @@
                         <!-- Save Button -->
                         <button type="submit"
                             class="btn-primary w-full py-4 bg-gradient-to-r from-govNavy to-govNavy-light text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-150 flex items-center justify-center gap-2">
-                            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-govGreen-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
                                 </path>
@@ -357,20 +367,20 @@
 
                 <!-- Monthly Quota Card -->
                 <div
-                    class="bg-white rounded-3xl shadow-sm border border-amber-100/60 bg-gradient-to-tr from-white to-amber-50/20 p-5 flex flex-col items-center justify-between min-h-[190px] shadow-sm hover:shadow-md transition duration-200">
+                    class="bg-white rounded-3xl shadow-sm border border-green-100/60 bg-gradient-to-tr from-white to-green-50/20 p-5 flex flex-col items-center justify-between min-h-[190px] shadow-sm hover:shadow-md transition duration-200">
                     <div class="w-full flex items-center justify-between mb-3">
                         <div class="flex items-center gap-1.5">
-                            <span class="p-1 rounded bg-amber-50 text-amber-600">
+                            <span class="p-1 rounded bg-green-50 text-green-600">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
                                     </path>
                                 </svg>
                             </span>
-                            <h2 class="font-bold text-amber-900 text-sm">สิทธิคงเหลือรายเดือน</h2>
+                            <h2 class="font-bold text-green-900 text-sm">สิทธิคงเหลือรายเดือน</h2>
                         </div>
                         <span
-                            class="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-semibold">1,000
+                            class="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-semibold">1,000
                             บ./เดือน</span>
                     </div>
 
@@ -380,20 +390,20 @@
                             <svg class="w-full h-full progress-ring" viewBox="0 0 90 90">
                                 <circle class="text-slate-100" stroke-width="8" stroke="currentColor" fill="transparent"
                                     r="38" cx="45" cy="45" />
-                                <circle id="monthly-ring" class="progress-ring-circle text-amber-500" stroke-width="8"
+                                <circle id="monthly-ring" class="progress-ring-circle text-green-500" stroke-width="8"
                                     stroke-dasharray="238.76" stroke-dashoffset="238.76" stroke-linecap="round"
                                     stroke="currentColor" fill="transparent" r="38" cx="45" cy="45" />
                             </svg>
-                            <span class="percent-text absolute text-xs font-extrabold text-amber-700">0%</span>
+                            <span class="percent-text absolute text-xs font-extrabold text-green-700">0%</span>
                         </div>
 
                         <div class="flex flex-col min-w-0">
-                            <span class="text-xl md:text-2xl font-extrabold text-amber-950 leading-tight">
+                            <span class="text-xl md:text-2xl font-extrabold text-green-950 leading-tight">
                                 <span id="monthly-remaining">0.00</span> <span
-                                    class="text-[10px] font-semibold text-amber-600">บาท</span>
+                                    class="text-[10px] font-semibold text-green-600">บาท</span>
                             </span>
-                            <span class="text-[11px] text-amber-600/70 mt-0.5">ใช้แล้ว: <span id="monthly-used"
-                                    class="font-semibold text-amber-700">0.00</span> บ.</span>
+                            <span class="text-[11px] text-green-600/70 mt-0.5">ใช้แล้ว: <span id="monthly-used"
+                                    class="font-semibold text-green-700">0.00</span> บ.</span>
                         </div>
                     </div>
                 </div>
@@ -435,7 +445,7 @@
                 <div
                     class="bg-slate-950 text-slate-200 rounded-3xl shadow-lg border border-slate-800 p-6 flex flex-col gap-4">
                     <div class="flex items-center gap-2">
-                        <span class="p-1 rounded bg-amber-500/10 text-amber-400">
+                        <span class="p-1 rounded bg-govGreen/10 text-govGreen-light">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z">
@@ -451,12 +461,12 @@
                         <label for="sim-time-input"
                             class="text-xs font-medium text-slate-300">เลือกวันเวลาสมมติ:</label>
                         <input type="datetime-local" id="sim-time-input"
-                            class="w-full bg-slate-900 border border-slate-800 focus:border-amber-400 text-slate-100 rounded-xl px-3 py-2 text-xs outline-none transition duration-150">
+                            class="w-full bg-slate-900 border border-slate-800 focus:border-govGreen-light text-slate-100 rounded-xl px-3 py-2 text-xs outline-none transition duration-150">
                     </div>
 
                     <div class="grid grid-cols-2 gap-2 mt-1">
                         <button id="apply-sim-time-btn" type="button"
-                            class="py-2 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-slate-950 font-bold rounded-xl text-xs transition duration-150">
+                            class="py-2 bg-govGreen hover:bg-govGreen-dark active:scale-[0.98] text-white font-bold rounded-xl text-xs transition duration-150">
                             จำลองเวลานี้
                         </button>
                         <button id="reset-sim-time-btn" type="button"
