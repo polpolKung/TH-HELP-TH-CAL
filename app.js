@@ -418,7 +418,20 @@ function updateProgressRing(ringId, usedValue, limitValue) {
 function setupEventListeners() {
     // ดักจับการพิมพ์ยอดเงิน
     const amountInput = document.getElementById('amount-input');
-    amountInput.addEventListener('input', updateCalculationPreview);
+    amountInput.addEventListener('input', function (e) {
+        // กรองตัวอักษรอื่นที่ไม่ใช่ตัวเลขและจุดทศนิยม
+        let val = this.value;
+        val = val.replace(/[^0-9.]/g, '');
+        
+        // อนุญาตให้มีจุดทศนิยมได้ตัวเดียวเท่านั้น
+        const dotIndex = val.indexOf('.');
+        if (dotIndex !== -1) {
+            val = val.slice(0, dotIndex + 1) + val.slice(dotIndex + 1).replace(/\./g, '');
+        }
+        
+        this.value = val;
+        updateCalculationPreview();
+    });
 
     // ปุ่มฟอร์มส่งข้อมูล (บันทึก)
     const calcForm = document.getElementById('calculator-form');
