@@ -196,9 +196,114 @@ function deleteTransaction(id) {
     }).then((result) => {
         if (result.isConfirmed) {
             state.transactions = state.transactions.filter(t => t.id !== id);
-            saveTransactions();
+            recalculateAllTransactions();
             updateUI();
             showToast("ลบรายการเรียบร้อยแล้ว", "success");
+        }
+    });
+}
+
+// คำนวณยอดสิทธิของประวัติรายการทั้งหมดใหม่ จากอดีตมาปัจจุบัน (เพื่อให้สิทธิเรียงสะสมถูกต้อง)
+function recalculateAllTransactions() {
+    // เรียงจากเก่าไปใหม่เพื่อคำนวณสะสม
+    const sorted = [...state.transactions].sort((a, b) => a.timestamp - b.timestamp);
+    
+    const dailyGovSum = {};
+    const monthlyGovSum = {};
+
+    for (let t of sorted) {
+        const date = new Date(t.timestamp);
+        const dayKey = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+        const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+
+        if (!dailyGovSum[dayKey]) dailyGovSum[dayKey] = 0;
+        if (!monthlyGovSum[monthKey]) monthlyGovSum[monthKey] = 0;
+
+        const dailyLimitRemaining = Math.max(0, 200 - dailyGovSum[dayKey]);
+        const monthlyLimitRemaining = Math.max(0, 1000 - monthlyGovSum[monthKey]);
+
+        const expectedGovSubsidy = t.amount * 0.60;
+        let actualGovSubsidy = Math.min(expectedGovSubsidy, dailyLimitRemaining, monthlyLimitRemaining);
+        actualGovSubsidy = Math.max(0, actualGovSubsidy);
+        actualGovSubsidy = Math.round(actualGovSubsidy * 100) / 100;
+        
+        const userPay = Math.round((t.amount - actualGovSubsidy) * 100) / 100;
+
+        t.govSubsidy = actualGovSubsidy;
+        t.userPay = userPay;
+
+        dailyGovSum[dayKey] += actualGovSubsidy;
+        monthlyGovSum[monthKey] += actualGovSubsidy;
+    }
+
+    // เซ็ตกลับ และบันทึก
+    state.transactions = sorted.reverse();
+    saveTransactions();
+}
+
+// แก้ไขรายการธุรกรรม
+function editTransaction(id) {
+    const tx = state.transactions.find(t => t.id === id);
+    if (!tx) return;
+
+    Swal.fire({
+        title: 'แก้ไขรายการใช้จ่าย',
+        html: `
+            <div class="flex flex-col gap-4 text-left font-prompt">
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold text-slate-500">ยอดซื้อสินค้า/บริการ (บาท)</label>
+                    <input id="swal-amount" type="text" inputmode="decimal" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500" value="${tx.amount}">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold text-slate-500">บันทึกช่วยจำ</label>
+                    <input id="swal-note" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500" value="${escapeHtml(tx.note)}">
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonColor: '#0f2a4a', // govNavy
+        cancelButtonColor: '#64748b', // slate-500
+        confirmButtonText: 'บันทึกการแก้ไข',
+        cancelButtonText: 'ยกเลิก',
+        background: '#ffffff',
+        customClass: {
+            popup: 'rounded-3xl shadow-xl border border-slate-100 font-prompt',
+            confirmButton: 'px-5 py-2.5 bg-govNavy text-white rounded-xl font-semibold text-sm transition hover:bg-govNavy-light focus:outline-none mr-2',
+            cancelButton: 'px-5 py-2.5 bg-slate-500 text-white rounded-xl font-semibold text-sm transition hover:bg-slate-600 focus:outline-none ml-2'
+        },
+        buttonsStyling: false,
+        didOpen: () => {
+            const swalAmount = document.getElementById('swal-amount');
+            if (swalAmount) {
+                swalAmount.addEventListener('input', function() {
+                    let val = this.value;
+                    val = val.replace(/[^0-9.]/g, '');
+                    const dotIndex = val.indexOf('.');
+                    if (dotIndex !== -1) {
+                        val = val.slice(0, dotIndex + 1) + val.slice(dotIndex + 1).replace(/\./g, '');
+                    }
+                    this.value = val;
+                });
+            }
+        },
+        preConfirm: () => {
+            const amountVal = document.getElementById('swal-amount').value;
+            const noteVal = document.getElementById('swal-note').value;
+            const amount = parseFloat(amountVal);
+            if (isNaN(amount) || amount <= 0) {
+                Swal.showValidationMessage('กรุณากรอกยอดเงินที่ถูกต้องและมากกว่า 0');
+                return false;
+            }
+            return { amount, note: noteVal };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            tx.amount = result.value.amount;
+            tx.note = result.value.note.trim() || 'รายการทั่วไป';
+            
+            recalculateAllTransactions();
+            updateUI();
+            showToast("แก้ไขรายการเรียบร้อยแล้ว", "success");
         }
     });
 }
@@ -366,6 +471,11 @@ function updateUI() {
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button onclick="editTransaction('${t.id}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors duration-150" title="แก้ไขรายการ">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                    </button>
                     <button onclick="deleteTransaction('${t.id}')" class="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors duration-150" title="ลบรายการ">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
